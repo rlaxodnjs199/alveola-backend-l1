@@ -1,6 +1,7 @@
 import os.path
 
 from fastapi import APIRouter, Depends
+from loguru import logger
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -18,13 +19,13 @@ async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings
     if os.path.exists(settings.service_account_file):
         creds = service_account.Credentials.from_service_account_file(settings.service_account_file, scopes=SCOPES)
     else:
-        print('No valid creds')
+        logger.error('No valid creds')
 
     try:
         service = build('sheets', 'v4', credentials=creds)
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=settings.spreadsheetId, range=proj).execute()
         values = result.get('values', [])
-        print(values)
+        logger.info(values)
     except HttpError as err:
-        print(err)
+        logger.error(err)
