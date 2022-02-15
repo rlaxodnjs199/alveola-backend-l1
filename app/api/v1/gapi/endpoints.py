@@ -26,6 +26,9 @@ async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=settings.spreadsheetId, range=proj).execute()
         values = result.get('values', [])
-        logger.info(values)
+        headers = values[0]
+        rows = values[1:]
     except HttpError as err:
         logger.exception(err)
+
+    return {'headers': headers, 'rows': rows}
