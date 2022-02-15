@@ -28,4 +28,4 @@ async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings
         values = result.get('values', [])
         logger.info(values)
     except HttpError as err:
-        logger.error(err)
+        logger.exception(err)
