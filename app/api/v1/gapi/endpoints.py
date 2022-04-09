@@ -26,9 +26,17 @@ async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=settings.spreadsheetId, range=proj).execute()
         values = result.get('values', [])
-        headers = values[0]
+        columns = values[0]
         rows = values[1:]
     except HttpError as err:
         logger.exception(err)
+    
+    if isinstance(columns, list):
+        return_columns = [{'Header': column.upper(), 'accessor': column} for column in columns]
+    
+    return_rows = []
+    for row in rows:
+        return_row = {col: val for col, val in zip(columns, row) }
+        return_rows.append(return_row)
 
-    return {'headers': headers, 'rows': rows}
+    return {'columns': return_columns, 'rows': return_rows}
