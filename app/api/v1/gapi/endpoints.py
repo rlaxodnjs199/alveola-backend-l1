@@ -6,7 +6,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
 
-from app.config import Settings, get_settings
+from app.config import config
 
 gapi_router = APIRouter(
     prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
@@ -14,12 +14,12 @@ gapi_router = APIRouter(
 
 
 @gapi_router.get("/qctworksheet/{proj}")
-async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings)):
+async def get_qct_worksheet(proj: str):
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-    if os.path.exists(settings.service_account_file):
+    if os.path.exists(config.service_account_file):
         creds = service_account.Credentials.from_service_account_file(
-            settings.service_account_file, scopes=SCOPES
+            config.service_account_file, scopes=SCOPES
         )
     else:
         logger.error("No valid creds")
@@ -29,7 +29,7 @@ async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings
         sheet = service.spreadsheets()
         result = (
             sheet.values()
-            .get(spreadsheetId=settings.spreadsheetId, range=proj)
+            .get(spreadsheetId=config.spreadsheet_id, range=proj)
             .execute()
         )
         values = result.get("values", [])
