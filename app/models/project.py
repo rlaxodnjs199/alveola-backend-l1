@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String
-
-from core.db.pgsql import Base
-from core.db.pgsql.mixins import TimestampMixin
+from app.core.db.pgsql import Base
+from app.core.db.pgsql.mixins import TimestampMixin
 
 
 class Project(Base, TimestampMixin):
