@@ -1,11 +1,9 @@
-from multiprocessing import synchronize
-from multiprocessing.sharedctypes import synchronized
 from typing import List, Optional, Union
-from requests import delete
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
 from sqlalchemy.orm import Session
 
+from app.core.db.pgsql import async_session
 from app.models.project import Project
 
 
@@ -47,3 +45,9 @@ class ProjectDAL:
             .execution_options(synchronize_session="fetch")
         )
         await self.db_session.execute(q)
+
+
+async def get_project_dal() -> ProjectDAL:
+    async with async_session() as session:
+        async with session.begin():
+            yield ProjectDAL(session)
