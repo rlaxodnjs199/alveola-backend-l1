@@ -1,6 +1,6 @@
 import os.path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from loguru import logger
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError

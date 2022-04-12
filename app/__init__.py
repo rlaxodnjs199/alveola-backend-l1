@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.gapi import gapi_router
+from app.api.v1.project import project_router
 from app.api.v1.ctscan import ctscan_router
 from app.core.db.pgsql.session import engine
 from app.core.db.pgsql import Base
@@ -24,8 +25,9 @@ def init_cors(app: FastAPI) -> None:
 
 
 def init_routers(app: FastAPI) -> None:
-    app.include_router(gapi_router)
+    app.include_router(project_router)
     app.include_router(ctscan_router)
+    app.include_router(gapi_router)
 
 
 def create_app() -> FastAPI:
@@ -43,8 +45,8 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-@app.on_event("startup")
-async def startup():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+# @app.on_event("startup")
+# async def startup():
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.drop_all)
+#         await conn.run_sync(Base.metadata.create_all)
