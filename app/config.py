@@ -5,7 +5,7 @@ from pydantic import BaseSettings, Field, PostgresDsn
 
 class Config(BaseSettings):
     service_account_file: str = Field(..., env="SERVICE_ACCOUNT_FILE")
-    spreadsheet_id: str = Field(..., env="SPREADSHEET_ID")
+    qctworksheet_id: str = Field(..., env="QCTWORKSHEET_ID")
 
     class Config:
         env_file = ".env"
