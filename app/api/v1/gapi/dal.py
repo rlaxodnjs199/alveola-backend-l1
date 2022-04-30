@@ -29,21 +29,25 @@ class GSheetsDAL:
 
         return {"columns": project_headers, "rows": project_rows}
 
-    def get_ctscan(self, project: str, row: int):
-        def construct_ctscan_dict_from_gsheet(gsheet_ctscan: List, row: int):
-            return {
-                "proj": gsheet_ctscan[0],
-                "subj": gsheet_ctscan[1],
-                "ctdate": gsheet_ctscan[3],
-                "fu": gsheet_ctscan[4],
-                "dcm_in_path": gsheet_ctscan[5],
-                "dcm_ex_path": gsheet_ctscan[6],
-                "qctworksheet_row": row,
-            }
+    def get_ctscan(self, project: str, row_index: int):
+        def construct_ctscan_dict_from_gsheet(
+            gsheet_ctscan: List, row_index: int
+        ) -> CTScan:
+            return CTScan(
+                proj=gsheet_ctscan[0],
+                subj=gsheet_ctscan[1],
+                mrn=gsheet_ctscan[2],
+                study_id=gsheet_ctscan[3],
+                ctdate=gsheet_ctscan[4],
+                fu=gsheet_ctscan[5],
+                dcm_in_path=gsheet_ctscan[6],
+                dcm_ex_path=gsheet_ctscan[7],
+                row_index=row_index,
+            )
 
         project_worksheet = self.qctworksheet.worksheet(project)
-        gsheet_ctscan = project_worksheet.row_values(row)
-        ctscan = CTScan(**construct_ctscan_dict_from_gsheet(gsheet_ctscan, row))
+        gsheet_ctscan = project_worksheet.row_values(row_index)
+        ctscan = construct_ctscan_dict_from_gsheet(gsheet_ctscan, row_index)
 
         return ctscan
 

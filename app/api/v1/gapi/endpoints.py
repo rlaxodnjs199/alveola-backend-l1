@@ -14,11 +14,12 @@ gapi_router = APIRouter(
 @gapi_router.get("/projects")
 def get_project_list(gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))) -> Dict:
     worksheets = gsheets_dal.get_project_list()
-    projects = [worksheet.title for worksheet in worksheets]
-    # Remove sheets not projects
-    projects.remove("Dictionary")
-    projects.remove("Template")
-    projects.remove("New Template")
+    # projects = [worksheet.title for worksheet in worksheets]
+    # # Remove sheets not projects
+    # projects.remove("Dictionary")
+    # projects.remove("Template")
+    # projects.remove("New Template")
+    projects = ["New Template"]
 
     return {"projects": projects}
 
@@ -36,7 +37,7 @@ def deidentify_ctscans(
     gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal)),
 ) -> Dict:
     for ctscan in ctscans:
-        ctscan_model = gsheets_dal.get_ctscan(ctscan.project, ctscan.row)
-        deidentify_ctscan(ctscan_model, ScanTypeEnum(ctscan.in_ex), gsheets_dal)
+        ctscan_model = gsheets_dal.get_ctscan(ctscan.project, ctscan.row_index)
+        deidentify_ctscan(ctscan_model, ScanTypeEnum(ctscan.type), gsheets_dal)
 
     return ctscan

@@ -2,9 +2,9 @@ from enum import Enum
 from typing import List
 
 
-class ScanTypeEnum(Enum):
-    IN: str = "IN"
-    EX: str = "EX"
+class ScanTypeEnum(str, Enum):
+    IN = "IN"
+    EX = "EX"
 
 
 class ValidProtocolEnum(Enum):
