@@ -5,15 +5,14 @@ from app.core.db.gsheets import QCTWorksheet
 
 
 class GSheetsDAL:
-    def __init__(self) -> None:
-        self.qctworksheet = QCTWorksheet().sheet
+    qctworksheet = QCTWorksheet().sheet
 
     def get_project_list(self):
-        worksheet_list = self.qctworksheet.worksheets()
+        worksheet_list = GSheetsDAL.qctworksheet.worksheets()
         return worksheet_list
 
     def get_project_data(self, project: str):
-        project_worksheet = self.qctworksheet.worksheet(project)
+        project_worksheet = GSheetsDAL.qctworksheet.worksheet(project)
         project_data = project_worksheet.get_all_values()
 
         if isinstance(project_data, List) and len(project_data) > 0:
@@ -45,7 +44,7 @@ class GSheetsDAL:
                 row_index=row_index,
             )
 
-        project_worksheet = self.qctworksheet.worksheet(project)
+        project_worksheet = GSheetsDAL.qctworksheet.worksheet(project)
         gsheet_ctscan = project_worksheet.row_values(row_index)
         ctscan = construct_ctscan_dict_from_gsheet(gsheet_ctscan, row_index)
 
