@@ -6,8 +6,8 @@ from typing import Dict, List
 from pydicom import Dataset, dcmread
 
 from app.api.v1.gapi.dal import GSheetsDAL
-from app.api.v1.gapi.enums import ScanTypeEnum, ValidProtocolEnum
-from app.api.v1.gapi.models import CTScan
+from app.core.gapi.enums import ScanTypeEnum, ValidProtocolEnum
+from app.core.gapi.models import CTScan
 from .tags import TAGS_TO_ANONYMIZE
 
 

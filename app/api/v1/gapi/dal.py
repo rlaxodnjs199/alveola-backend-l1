@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import List
-from .models import CTScan
-from app.core.db.gsheets import QCTWorksheet
+from app.core.gapi.models import CTScan
+from app.core.gapi.qctworksheet import QCTWorksheet
 
 
 class GSheetsDAL:
@@ -27,6 +27,11 @@ class GSheetsDAL:
             ]
 
         return {"columns": project_headers, "rows": project_rows}
+
+    def create_project(self, project: str):
+        GSheetsDAL.qctworksheet.duplicate_sheet(
+            source_sheet_id=0, new_sheet_name=project
+        )
 
     def get_ctscan(self, project: str, row_index: int):
         def construct_ctscan_dict_from_gsheet(

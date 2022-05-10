@@ -1,10 +1,10 @@
 from typing import Dict, List
 from fastapi import APIRouter, Depends
 
-from app.api.v1.gapi.schemas import CTScanRequestSchema
+from app.core.gapi.schemas import CTScanRequestSchema
 from .dal import GSheetsDAL, get_gsheets_dal
 from .util import deidentify_ctscan
-from .enums import ScanTypeEnum
+from ....core.gapi.enums import ScanTypeEnum
 
 gapi_router = APIRouter(
     prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
@@ -29,6 +29,11 @@ def get_project_data(
     project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))
 ) -> Dict:
     return gsheets_dal.get_project_data(project)
+
+
+@gapi_router.post("/projects")
+def create_project(project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))):
+    return gsheets_dal.create_project(project)
 
 
 @gapi_router.post("/deidentify")

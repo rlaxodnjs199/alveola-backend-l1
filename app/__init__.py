@@ -26,7 +26,7 @@ def init_cors(app: FastAPI) -> None:
 
 def init_routers(app: FastAPI) -> None:
     app.include_router(project_router)
-    app.include_router(gapi_router)
+    # app.include_router(gapi_router)
     app.include_router(ctscan_router)
 
 
