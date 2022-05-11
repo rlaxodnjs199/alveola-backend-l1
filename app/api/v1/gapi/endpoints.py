@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends
 from app.core.gapi.schemas import CTScanRequestSchema
 from .dal import GSheetsDAL, get_gsheets_dal
 from .util import deidentify_ctscan
-from ....core.gapi.enums import ScanTypeEnum
 
 gapi_router = APIRouter(
     prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
@@ -19,7 +18,7 @@ def get_project_list(gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))) -> Di
     # projects.remove("Dictionary")
     # projects.remove("Template")
     # projects.remove("New Template")
-    projects = ["New Template"]
+    projects = ["LHC"]
 
     return {"projects": projects}
 
@@ -38,11 +37,11 @@ def create_project(project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_
 
 @gapi_router.post("/deidentify")
 def deidentify_ctscans(
-    ctscans: List[CTScanRequestSchema],
+    ctscan_requests: List[CTScanRequestSchema],
     gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal)),
 ) -> Dict:
-    for ctscan in ctscans:
-        ctscan_model = gsheets_dal.get_ctscan(ctscan.project, ctscan.row_index)
-        deidentify_ctscan(ctscan_model, ScanTypeEnum(ctscan.type), gsheets_dal)
+    for ctscan_request in ctscan_requests:
+        ctscan = gsheets_dal.get_ctscan(ctscan_request)
+        deidentify_ctscan(ctscan, gsheets_dal)
 
     return ctscan

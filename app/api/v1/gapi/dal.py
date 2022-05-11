@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import List
 from app.core.gapi.models import CTScan
 from app.core.gapi.qctworksheet import QCTWorksheet
+from app.core.gapi.schemas import CTScanRequestSchema
 
 
 class GSheetsDAL:
@@ -33,27 +34,23 @@ class GSheetsDAL:
             source_sheet_id=0, new_sheet_name=project
         )
 
-    def get_ctscan(self, project: str, row_index: int):
-        def construct_ctscan_dict_from_gsheet(
-            gsheet_ctscan: List, row_index: int
-        ) -> CTScan:
-            return CTScan(
-                proj=gsheet_ctscan[0],
-                subj=gsheet_ctscan[1],
-                mrn=gsheet_ctscan[2],
-                study_id=gsheet_ctscan[3],
-                ctdate=gsheet_ctscan[4],
-                fu=gsheet_ctscan[5],
-                dcm_in_path=gsheet_ctscan[6],
-                dcm_ex_path=gsheet_ctscan[7],
-                row_index=row_index,
-            )
+    def get_ctscan(self, ct_scan_request: CTScanRequestSchema):
+        project_worksheet = GSheetsDAL.qctworksheet.worksheet(ct_scan_request.project)
+        gspread_ct_scan = project_worksheet.row_values(ct_scan_request.row_index)
+        # Pad list with empty value, need to update hard-coded length later
+        gspread_ct_scan += [""] * (13 - len(gspread_ct_scan))
+        ct_scan = CTScan.from_gspread(gspread_ct_scan, ct_scan_request.row_index)
 
-        project_worksheet = GSheetsDAL.qctworksheet.worksheet(project)
-        gsheet_ctscan = project_worksheet.row_values(row_index)
-        ctscan = construct_ctscan_dict_from_gsheet(gsheet_ctscan, row_index)
+        return ct_scan
 
-        return ctscan
+    # def get_all_subjects(project: str, subject: str):
+    #     subjects = GSheetsDAL.qctworksheet.worksheet(project).findall(subject)
+
+    #     return subjects
+
+    # def update_scan_on_deidentification(ctscan: CTScan):
+    #     project_worksheet = GSheetsDAL.qctworksheet.worksheet(ctscan.proj)
+    #     print(ctscan.__dict__)
 
 
 @lru_cache
