@@ -1,4 +1,5 @@
 import os
+import re
 import string
 from os.path import basename, dirname
 from pathlib import Path
@@ -11,18 +12,34 @@ from app.core.gapi.models import CTScan
 from .tags import TAGS_TO_ANONYMIZE
 
 
-def deidentify_ctscan(
-    ctscan: CTScan, in_or_ex: ScanTypeEnum, gsheets_dal: GSheetsDAL
-) -> None:
-    if in_or_ex == ScanTypeEnum.IN:
-        ctscan.type = ScanTypeEnum.IN
-        ctscan_path = ctscan.dcm_in_path
-    elif in_or_ex == ScanTypeEnum.EX:
-        ctscan.type = ScanTypeEnum.EX
-        ctscan_path = ctscan.dcm_ex_path
-    else:
-        print("Exception: Invalid scantype input")
-        return []
+class deidentify:
+    def __init__(self, ctscan: CTScan) -> None:
+        self.ctscan = ctscan
+        self.series_filter = None
+
+    @property
+    def series_dict(self):
+        pass
+
+    def get_dicom_paths(dicom_path: Path):
+        pass
+
+    # create ~~~_deid_tk folder
+    def set_deid_root_dir_path(dicom_path: Path):
+        pass
+
+
+def deidentify_ctscan(ctscan: CTScan, gsheets_dal: GSheetsDAL) -> None:
+    if not ctscan.type or ctscan.type not in list(ScanTypeEnum):
+        print("Invalid CT scan type")
+
+    def create_processed_series_dict(scan_type: str):
+        if scan_type == ScanTypeEnum.IN:
+            return {ScanTypeEnum.IN: {}}
+        elif scan_type == ScanTypeEnum.EX:
+            return {ScanTypeEnum.EX: {}}
+        elif scan_type == ScanTypeEnum.BOTH:
+            return {ScanTypeEnum.IN: {}, ScanTypeEnum.EX: {}}
 
     def get_dicom_paths(ctscan_path: Path) -> List[Path]:
         dicom_paths = []
@@ -93,10 +110,9 @@ def deidentify_ctscan(
 
         return deid_dicom_subdir_path
 
-    def validate_ct_protocol(dicom: Dataset, in_or_ex: str):
+    def validate_ct_protocol(dicom: Dataset, scan_type: str):
         ct_protocol = dicom.SeriesDescription.upper()
-        # print(ct_protocol, in_ex)
-        if in_or_ex == ScanTypeEnum.IN:
+        if scan_type == ScanTypeEnum.IN:
             for validate_protocol_substring in ValidProtocolEnum.IN.value:
                 if validate_protocol_substring in ct_protocol:
                     return True
@@ -119,6 +135,10 @@ def deidentify_ctscan(
                 ctscan, dicom, deid_dicom_dir_path, processed_series_dict
             )
             try:
+                print(ctscan.mrn)
+                if not ctscan.mrn:
+                    ctscan.mrn = dicom.patientID
+                    print(ctscan.mrn)
                 dicom.PatientID = dicom.PatientName = ctscan.subj
                 dicom.PatientBirthDate = dicom.PatientBirthDate[:-4] + "0101"
                 # Record proj at 'DeidentificationMethod' tag
@@ -135,40 +155,39 @@ def deidentify_ctscan(
             except:
                 print("Error occurred while de-identifying dicom images")
 
-    def get_deid_dicom_destination(in_or_ex: str, processed_series_dict: Dict) -> Path:
-        return list(processed_series_dict[in_or_ex].values())[0]
+    def get_deid_path(scan_type: ScanTypeEnum, processed_series_dict: Dict) -> Path:
 
-    def update_qctworksheet(
-        ctscan: CTScan,
-        deid_dicom_destination: Path,
-        gsheets_dal: GSheetsDAL,
-    ):
-        QCTWORKSHEET_DEID_IN_INDEX = 9
-        QCTWORKSHEET_DEID_EX_INDEX = 10
+        return list(processed_series_dict[scan_type].values())[0]
 
-        if ctscan.type == ScanTypeEnum.IN:
-            gsheets_dal.qctworksheet.worksheet(ctscan.proj).update_cell(
-                ctscan.row_index,
-                QCTWORKSHEET_DEID_IN_INDEX,
-                deid_dicom_destination,
-            )
-        else:
-            gsheets_dal.qctworksheet.worksheet(ctscan.proj).update_cell(
-                ctscan.row_index,
-                QCTWORKSHEET_DEID_EX_INDEX,
-                deid_dicom_destination,
-            )
+    def calc_fu(project: str, subject: str, gsheets_dal: GSheetsDAL):
+        subjects = gsheets_dal.get_all_subjects(project, subject)
+        fu = len(subjects) - 1
 
-    dicom_paths = get_dicom_paths(ctscan_path)
-    deid_dicom_dir_path = prepare_deid_dicom_dir(ctscan_path)
+        if fu < 0:
+            print("Error: Entry did not exist in QCTWorksheet")
+            return 0
 
-    processed_series_dict = {ScanTypeEnum.IN: {}, ScanTypeEnum.EX: {}}
+        return fu
+
+    def update_ctscan(ctscan: CTScan, processed_series_dict: Dict) -> CTScan:
+        if processed_series_dict[ScanTypeEnum.IN]:
+            ctscan.deid_in_path = get_deid_path(ScanTypeEnum.IN, processed_series_dict)
+        if processed_series_dict[ScanTypeEnum.EX]:
+            ctscan.deid_ex_path = get_deid_path(ScanTypeEnum.EX, processed_series_dict)
+        ctscan.subj = re.sub("[^a-zA-Z0-9]", "", ctscan.study_id)
+        ctscan.fu = calc_fu(ctscan.proj, ctscan.subj, gsheets_dal)
+        print(ctscan)
+        return ctscan
+
+    # need to update later: Both -> look at either IN or EX path, otherwise look at specific path
+    dicom_paths = get_dicom_paths(ctscan.dcm_in_path)
+    deid_dicom_dir_path = prepare_deid_dicom_dir(ctscan.dcm_in_path)
+
+    processed_series_dict = create_processed_series_dict(ctscan.type)
     for dicom_slice_path in dicom_paths:
         deidentify_dicom_slice(
             ctscan, deid_dicom_dir_path, dicom_slice_path, processed_series_dict
         )
 
-    deid_dicom_destination = get_deid_dicom_destination(
-        ctscan.type, processed_series_dict
-    )
-    update_qctworksheet(ctscan, deid_dicom_destination, gsheets_dal)
+    ctscan = update_ctscan(ctscan, processed_series_dict)
+    gsheets_dal.update_scan_on_deidentification(ctscan)

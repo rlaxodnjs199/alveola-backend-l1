@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.gapi.schemas import CTScanRequestSchema
 from .dal import GSheetsDAL, get_gsheets_dal
-from .util import deidentify_ctscan
+from .util import Deidentifier
 
 gapi_router = APIRouter(
     prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
@@ -37,11 +37,11 @@ def create_project(project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_
 
 @gapi_router.post("/deidentify")
 def deidentify_ctscans(
-    ctscan_requests: List[CTScanRequestSchema],
+    ct_scan_requests: List[CTScanRequestSchema],
     gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal)),
 ) -> Dict:
-    for ctscan_request in ctscan_requests:
-        ctscan = gsheets_dal.get_ctscan(ctscan_request)
-        deidentify_ctscan(ctscan, gsheets_dal)
+    for ct_scan_request in ct_scan_requests:
+        qct_scan = gsheets_dal.get_ctscan(ct_scan_request)
+        Deidentifier(qct_scan).run()
 
-    return ctscan
+    return {"message": "success!"}

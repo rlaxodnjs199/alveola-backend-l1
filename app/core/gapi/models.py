@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 
-class CTScan:
+class QCTScan:
     def __init__(
         self,
         proj: str,
@@ -27,7 +27,6 @@ class CTScan:
         self.deid_in_path = deid_in_path
         self.deid_ex_path = deid_ex_path
         self.row_index = row_index
-        self.series = []
 
     @classmethod
     def from_gspread(cls, gspread_ct_scan: List, row_index: int):

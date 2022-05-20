@@ -1,6 +1,8 @@
 from functools import lru_cache
 from typing import List
-from app.core.gapi.models import CTScan
+from gspread import Cell
+
+from app.core.gapi.models import QCTScan
 from app.core.gapi.qctworksheet import QCTWorksheet
 from app.core.gapi.schemas import CTScanRequestSchema
 
@@ -34,23 +36,18 @@ class GSheetsDAL:
             source_sheet_id=0, new_sheet_name=project
         )
 
-    def get_ctscan(self, ct_scan_request: CTScanRequestSchema):
+    def get_ctscan(self, ct_scan_request: CTScanRequestSchema) -> QCTScan:
         project_worksheet = GSheetsDAL.qctworksheet.worksheet(ct_scan_request.project)
         gspread_ct_scan = project_worksheet.row_values(ct_scan_request.row_index)
         # Pad list with empty value, need to update hard-coded length later
         gspread_ct_scan += [""] * (13 - len(gspread_ct_scan))
-        ct_scan = CTScan.from_gspread(gspread_ct_scan, ct_scan_request.row_index)
+        ct_scan = QCTScan.from_gspread(gspread_ct_scan, ct_scan_request.row_index)
 
         return ct_scan
 
-    # def get_all_subjects(project: str, subject: str):
-    #     subjects = GSheetsDAL.qctworksheet.worksheet(project).findall(subject)
-
-    #     return subjects
-
-    # def update_scan_on_deidentification(ctscan: CTScan):
-    #     project_worksheet = GSheetsDAL.qctworksheet.worksheet(ctscan.proj)
-    #     print(ctscan.__dict__)
+    def update_cells(self, project: str, cell_list: List[Cell]) -> None:
+        project_worksheet = GSheetsDAL.qctworksheet.worksheet(project)
+        project_worksheet.update_cells(cell_list)
 
 
 @lru_cache

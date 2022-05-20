@@ -1,1 +1,1 @@
-from .deidentification import deidentify_ctscan
+from .deidentifier.deidentifier import Deidentifier
