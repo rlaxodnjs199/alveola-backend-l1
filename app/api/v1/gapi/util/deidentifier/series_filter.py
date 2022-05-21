@@ -5,7 +5,7 @@ from pydicom import Dataset
 
 class SeriesFilter:
     LHC = {
-        "SliceThickness": 1.0,
+        "SliceThickness": 1.5,
         "ScanType": {
             "IN": ["IN", "TLC"],
             "EX": ["EX", "RV"],
@@ -15,7 +15,17 @@ class SeriesFilter:
     }
 
     GALA = {
-        "SliceThickness": 1.0,
+        "SliceThickness": 1.5,
+        "ScanType": {"IN": ["IN", "TLC"], "EX": ["EX", "RV"]},
+    }
+
+    PRECISE = {
+        "SliceThickness": 1.5,
+        "ScanType": {"IN": ["IN", "TLC"], "EX": ["EX", "RV"]},
+    }
+
+    SARP4 = {
+        "SliceThickness": 1.5,
         "ScanType": {"IN": ["IN", "TLC"], "EX": ["EX", "RV"]},
     }
 

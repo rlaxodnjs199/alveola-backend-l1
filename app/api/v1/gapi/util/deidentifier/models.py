@@ -85,7 +85,6 @@ class DeidSeries:
                 self.type + self.qct_scan.fu,
             ]
         )
-        print(deid_series_dir)
         # Multiple same type of scans avaialbe: Need to attach postfix to the dirname
         num_of_scans_with_same_type = len(
             self.deid_scan.series_to_deidentify_dict[self.type]
