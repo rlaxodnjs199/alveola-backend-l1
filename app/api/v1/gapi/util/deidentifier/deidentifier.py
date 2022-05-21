@@ -5,6 +5,7 @@ from pathlib import Path
 from pydicom import dcmread
 from gspread import Cell
 
+from app.config import config
 from app.core.gapi.models import QCTScan
 from app.api.v1.gapi.util.deidentifier.models import DeidScan
 from ...dal import GSheetsDAL, get_gsheets_dal
@@ -33,8 +34,8 @@ class Deidentifier:
 
             return dicom_slice_paths
 
-        dicom_slice_paths = get_dicom_slice_paths(self.qct_scan.dcm_path)
         deid_scan = DeidScan(self.qct_scan)
+        dicom_slice_paths = get_dicom_slice_paths(deid_scan.dcm_path)
         deid_scan.construct_deid_scan(dicom_slice_paths)
 
         return deid_scan
@@ -44,9 +45,13 @@ class Deidentifier:
             for series in series_dict.values():
                 # Update deid_in_path, deid_ex_path
                 if not deid_scan.qct_scan.deid_in_path and scan_type == "IN":
-                    deid_scan.qct_scan.deid_in_path = series.deid_path
+                    deid_scan.qct_scan.deid_in_path = os.path.relpath(
+                        series.deid_path, config.p_drive_path_prefix
+                    )
                 if not deid_scan.qct_scan.deid_ex_path and scan_type == "EX":
-                    deid_scan.qct_scan.deid_ex_path = series.deid_path
+                    deid_scan.qct_scan.deid_ex_path = os.path.relpath(
+                        series.deid_path, config.p_drive_path_prefix
+                    )
 
                 for slice_path in series.slice_paths:
                     try:

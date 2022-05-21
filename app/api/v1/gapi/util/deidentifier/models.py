@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pydicom import dcmread
 
+from app.config import config
 from app.core.gapi.models import QCTScan
 from .series_filter import SeriesFilter
 
@@ -13,21 +14,23 @@ from .series_filter import SeriesFilter
 class DeidScan:
     def __init__(self, qct_scan: QCTScan) -> None:
         self.qct_scan = qct_scan
+        self.dcm_path: Path = self.get_dcm_path()
         self.deid_path: Path = self.get_deid_path()
         self.series_to_deidentify: Set = set()
         self.series_to_deidentify_dict: Dict[str, Dict[str, DeidSeries]] = {}
         self.series_not_to_deidentify: Set = set()
 
+    def get_dcm_path(self) -> Path:
+        return os.path.join(config.p_drive_path_prefix, self.qct_scan.dcm_path)
+
     def get_deid_path(self) -> Path:
         try:
-            root_dir = dirname(self.qct_scan.dcm_path)
+            root_dir = dirname(self.dcm_path)
             deid_root_dir_components = basename(root_dir).split("_")[:3]
             deid_root_dir_components.extend(["deid", basename(root_dir).split("_")[-1]])
             deid_root_dir = ("_").join(deid_root_dir_components)
             deid_root_dir_path = os.path.join(dirname(root_dir), deid_root_dir)
-            deid_scan_path = os.path.join(
-                deid_root_dir_path, basename(self.qct_scan.dcm_path)
-            )
+            deid_scan_path = os.path.join(deid_root_dir_path, basename(self.dcm_path))
         except:
             print("Error: Check Original CT scan folder naming convetion.")
 
