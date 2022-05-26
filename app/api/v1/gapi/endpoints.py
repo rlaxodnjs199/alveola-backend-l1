@@ -1,9 +1,10 @@
 from typing import Dict, List
 from fastapi import APIRouter, Depends
 
-from app.core.gapi.schemas import CTScanRequestSchema
 from .dal import GSheetsDAL, get_gsheets_dal
-from .util import Deidentifier
+from app.core.gapi.schemas import CTScanRequestSchema
+
+from app.core.gapi.tasks import deidentify_ct_scan
 
 gapi_router = APIRouter(
     prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
@@ -14,10 +15,10 @@ gapi_router = APIRouter(
 def get_project_list(gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))) -> Dict:
     worksheets = gsheets_dal.get_project_list()
     # projects = [worksheet.title for worksheet in worksheets]
-    # # Remove sheets not projects
-    # projects.remove("Dictionary")
+    # Remove sheets not projects
     # projects.remove("Template")
-    # projects.remove("New Template")
+    # projects.remove("Dictionary")
+    # projects.remove("Comments")
     projects = ["LHC"]
 
     return {"projects": projects}
@@ -36,12 +37,9 @@ def create_project(project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_
 
 
 @gapi_router.post("/deidentify")
-def deidentify_ctscans(
+def deidentify_ct_scans(
     ct_scan_requests: List[CTScanRequestSchema],
-    gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal)),
-) -> Dict:
+):
     for ct_scan_request in ct_scan_requests:
-        qct_scan = gsheets_dal.get_ctscan(ct_scan_request)
-        Deidentifier(qct_scan).run()
-
-    return {"message": "success!"}
+        task = deidentify_ct_scan.delay(ct_scan_request.dict())
+        return {"task_id": task.id}

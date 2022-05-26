@@ -1,7 +1,8 @@
 import os
+from typing import Union
 from functools import lru_cache
 from pathlib import Path
-from pydantic import BaseSettings, Field, PostgresDsn
+from pydantic import BaseSettings, Field, PostgresDsn, RedisDsn
 
 
 class Config(BaseSettings):
@@ -16,6 +17,8 @@ class Config(BaseSettings):
 
 class DevelopmentConfig(Config):
     postgres_dsn: PostgresDsn = Field(..., env="DEV_POSTGRES_URL")
+    celery_broker_url: RedisDsn = Field(..., env="CELERY_BROKER_URL")
+    celery_result_backend: RedisDsn = Field(..., env="CELERY_RESULT_BACKEND")
 
 
 class ProductionConfig(Config):
@@ -23,7 +26,7 @@ class ProductionConfig(Config):
 
 
 @lru_cache
-def get_config() -> Config:
+def get_config() -> Union[DevelopmentConfig, ProductionConfig]:
     env = os.getenv("ENV", "development")
     config_type = {"development": DevelopmentConfig(), "production": ProductionConfig()}
 
