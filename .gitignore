@@ -1,5 +1,7 @@
-.direnv
+.vscode/
+.direnv/
 .envrc
 __pycache__/
 token.json
 .env
+mock_data/

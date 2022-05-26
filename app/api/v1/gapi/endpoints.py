@@ -1,31 +1,45 @@
-import os.path
-
+from typing import Dict, List
 from fastapi import APIRouter, Depends
-from loguru import logger
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from google.oauth2 import service_account
 
-from app.config import Settings, get_settings
+from .dal import GSheetsDAL, get_gsheets_dal
+from app.core.gapi.schemas import CTScanRequestSchema
 
-gapi_router = APIRouter(prefix="/gapi", tags=['gapi'], responses={404: {"description": "Not found"}})
+from app.core.gapi.tasks import deidentify_ct_scan
 
-@gapi_router.get('/QCT-worksheet/{proj}')
-async def get_qct_worksheet(proj: str, settings: Settings = Depends(get_settings)):
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+gapi_router = APIRouter(
+    prefix="/gapi", tags=["gapi"], responses={404: {"description": "Not found"}}
+)
 
-    if os.path.exists(settings.service_account_file):
-        creds = service_account.Credentials.from_service_account_file(settings.service_account_file, scopes=SCOPES)
-    else:
-        logger.error('No valid creds')
 
-    try:
-        service = build('sheets', 'v4', credentials=creds)
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=settings.spreadsheetId, range=proj).execute()
-        values = result.get('values', [])
-        logger.info(values)
-    except HttpError as err:
-        logger.exception(err)
+@gapi_router.get("/projects")
+def get_project_list(gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))) -> Dict:
+    worksheets = gsheets_dal.get_project_list()
+    # projects = [worksheet.title for worksheet in worksheets]
+    # Remove sheets not projects
+    # projects.remove("Template")
+    # projects.remove("Dictionary")
+    # projects.remove("Comments")
+    projects = ["LHC"]
+
+    return {"projects": projects}
+
+
+@gapi_router.get("/projects/{project}")
+def get_project_data(
+    project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))
+) -> Dict:
+    return gsheets_dal.get_project_data(project)
+
+
+@gapi_router.post("/projects")
+def create_project(project: str, gsheets_dal: GSheetsDAL = (Depends(get_gsheets_dal))):
+    return gsheets_dal.create_project(project)
+
+
+@gapi_router.post("/deidentify")
+def deidentify_ct_scans(
+    ct_scan_requests: List[CTScanRequestSchema],
+):
+    for ct_scan_request in ct_scan_requests:
+        task = deidentify_ct_scan.delay(ct_scan_request.dict())
+        return {"task_id": task.id}
